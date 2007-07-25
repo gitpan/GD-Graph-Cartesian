@@ -1,2 +1,4 @@
-2007-07-30 v0.01
+2007-07-25 v0.02
+  * Updated the color algorithm to allocate unique colors only
+2007-07-23 v0.01
   * Original version based on GD::Graph::Polar

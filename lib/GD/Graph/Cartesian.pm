@@ -25,7 +25,7 @@ use strict;
 use vars qw($VERSION);
 use GD qw{gdSmallFont};
 
-$VERSION = sprintf("%d.%02d", q{Revision: 0.01} =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q{Revision: 0.02} =~ /(\d+)\.(\d+)/);
 
 =head1 CONSTRUCTOR
 
@@ -77,7 +77,7 @@ sub initialize {
   $self->{'ticksy'}  =  10 unless defined($self->{'ticksy'});
   $self->{'borderx'} =   2 unless defined($self->{'borderx'});
   $self->{'bordery'} =   2 unless defined($self->{'bordery'});
-  $self->{'object'}  = GD::Image->new($self->{'width'}, $self->{'height'});
+  $self->{'gdimage'}  = GD::Image->new($self->{'width'}, $self->{'height'});
   eval 'use Graphics::ColorNames';
   unless($@) {
     my $rgb;
@@ -96,11 +96,11 @@ sub initialize {
   }
 
   # make the background transparent and interlaced
-  $self->{'object'}->transparent($self->color([255,255,255]));
-  $self->{'object'}->interlaced('true');
+  $self->{'gdimage'}->transparent($self->color([255,255,255]));
+  $self->{'gdimage'}->interlaced('true');
   
   # Put a frame around the picture
-  $self->{'object'}->rectangle(0, 0, $self->{'width'}-1, $self->{'height'}-1, $self->color([0,0,0]));
+  $self->{'gdimage'}->rectangle(0, 0, $self->{'width'}-1, $self->{'height'}-1, $self->color([0,0,0]));
 
   $self->font(gdSmallFont);
   $self->color([0,0,0]);
@@ -170,6 +170,9 @@ sub addString {
 
 =head2 addRectangle
 
+  $obj->addRectangle(50=>25, 75=>35);
+  $obj->addRectangle(50=>25, 75=>35, [$r,$g,$b]);
+
 =cut
 
 sub addRectangle {
@@ -187,6 +190,8 @@ sub addRectangle {
 
 =head2 points 
 
+  Returns the points array reference.
+
 =cut
 
 sub points {
@@ -195,6 +200,8 @@ sub points {
 
 =head2 lines 
 
+  Returns the lines array reference.
+
 =cut
 
 sub lines {
@@ -202,6 +209,8 @@ sub lines {
 }
 
 =head2 strings 
+
+  Returns the strings array reference.
 
 =cut
 
@@ -224,15 +233,19 @@ sub color {
   if (@_) {
     my $color=shift();
     if (ref($color) eq "ARRAY") {
-      $self->{'color'}=$self->{'object'}->colorAllocate(@{$color});
+      my ($r, $g, $b)= @$color;
+      unless (defined($self->{'colors'}->{$r}->{$g}->{$b})) {
+        $self->{'colors'}->{$r}->{$g}->{$b} =
+          $self->{'gdimage'}->colorAllocate(@$color);
+      }
+      $self->{'color'}=$self->{'colors'}->{$r}->{$g}->{$b};
     } else {
       if (defined($self->{'ColorNames'})) {
-        $self->{'color'}=
-          $self->{'object'}->colorAllocate($self->{'ColorNames'}->rgb($color))
-            || $self->{'object'}->colorAllocate(0,0,0);
+        my @rgb=$self->{'ColorNames'}->rgb($color);
+        @rgb=(0,0,0) unless scalar(@rgb) == 3;
+        $self->{'color'}=$self->color(\@rgb);
       } else {
-        warn(qq{Warning: Graphics::ColorNames unavailable. Unknown color($color); Using [0,0,0] (black).\n});
-        $self->{'color'}=$self->{'object'}->colorAllocate(0,0,0);
+        $self->{'color'}=$self->color([0,0,0]);
       }
     }
   }
@@ -271,7 +284,7 @@ sub draw {
     my $x=$_->[0];
     my $y=$_->[1];
     my $c=ref($_->[2]) eq 'ARRAY' ? $self->color($_->[2]) : $self->color;
-    $self->{'object'}->arc($self->_imgxy_xy($x,$y),$i,$i,0,360,$c);
+    $self->{'gdimage'}->arc($self->_imgxy_xy($x,$y),$i,$i,0,360,$c);
   }
   my $l=$self->lines;
   foreach (@$l) {
@@ -280,7 +293,7 @@ sub draw {
     my $x1=$_->[2];
     my $y1=$_->[3];
     my $c=ref($_->[4]) eq 'ARRAY' ? $self->color($_->[4]) : $self->color;
-    $self->{'object'}->line($self->_imgxy_xy($x0, $y0),
+    $self->{'gdimage'}->line($self->_imgxy_xy($x0, $y0),
                             $self->_imgxy_xy($x1, $y1), $c);
   }
   my $s=$self->strings;
@@ -290,9 +303,9 @@ sub draw {
     my $s=$_->[2];
     my $c=ref($_->[3]) eq 'ARRAY' ? $self->color($_->[3]) : $self->color;
     my $f=$_->[4] || $self->font;
-    $self->{'object'}->string($f, $self->_imgxy_xy($x, $y), $s, $c);
+    $self->{'gdimage'}->string($f, $self->_imgxy_xy($x, $y), $s, $c);
   }
-  return $self->{'object'}->png;
+  return $self->{'gdimage'}->png;
 }
 
 =head2 minx
@@ -373,7 +386,12 @@ Method returns the parameter scaled to the pixels.
 sub _scalex {
   my $self=shift();
   my $x=shift(); #units
-  my $s=($self->maxx - $self->minx) / ($self->{'width'} - 2 * $self->{'borderx'}); #units/pixel
+  my $max=$self->maxx;
+  my $min=$self->minx;
+  my $s=1;
+  if (defined($max) and defined($min) and $max-$min) {
+    $s=($max - $min) / ($self->{'width'} - 2 * $self->{'borderx'}); #units/pixel
+  }
   return $x / $s; #pixels
 }
 
@@ -386,7 +404,12 @@ Method returns the parameter scaled to the pixels.
 sub _scaley {
   my $self=shift();
   my $y=shift(); #units
-  my $s=($self->maxy - $self->miny) / ($self->{'height'} - 2 * $self->{'bordery'}); #units/pixel
+  my $max=$self->maxy;
+  my $min=$self->miny;
+  my $s=1;
+  if (defined($max) and defined($min) and $max-$min) {
+    $s=($max - $min) / ($self->{'height'} - 2 * $self->{'bordery'}); #units/pixel
+  }
   return $y / $s; #pixels
 }
 
@@ -420,6 +443,8 @@ sub _imgy_y {
 __END__
 
 =head1 TODO
+
+The color method creates a new color for each call.  Does this really create a new color in the GD package?  Or, is it smart enough to consolidate color pallet.
 
 =head1 BUGS
 

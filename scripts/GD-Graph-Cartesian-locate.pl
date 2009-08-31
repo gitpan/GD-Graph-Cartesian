@@ -2,11 +2,11 @@
 
 =head1 NAME
 
-example-locate.pl - GD::Graph::Cartesian example
+GD-Graph-Cartesian-locate.pl - GD::Graph::Cartesian label example
 
 =head1 SAMPLE OUTPUT
 
-L<http://search.cpan.org/src/MRDVT/GD-Graph-Cartesian-0.01/bin/example-locate.png>
+L<http://search.cpan.org/src/MRDVT/GD-Graph-Cartesian-0.05/scripts/GD-Graph-Cartesian-locate.png>
 
 =cut
 
@@ -31,6 +31,6 @@ foreach my $x ($sx.. $ex) {
 }
 my ($x0,$x1,$y0,$y1) = ($obj->_minmaxx, $obj->_minmaxy);
 $obj->addRectangle($x0,$y0,$x1,$y1);
-open(IMG, ">example-locate.png");
+open(IMG, ">GD-Graph-Cartesian-locate.png");
 print IMG $obj->draw;
 close(IMG);

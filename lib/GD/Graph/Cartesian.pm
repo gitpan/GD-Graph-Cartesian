@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use GD qw{gdSmallFont};
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 =head1 NAME
 
@@ -24,26 +24,28 @@ GD::Graph::Cartesian - Make cartesian graph using GD package
 
 =head1 DESCRIPTION
 
+This is a wrapper around L<GD> to place points and lines on a X/Y scater plot.  
+
 =head1 CONSTRUCTOR
 
 =head2 new
 
 The new() constructor. 
 
-  my $obj = GD::Graph::Cartesian->new(               #default values
-                  width=>640,     #width in pixels
-                  height=>480,    #height in pixels
-                  ticksx=>10,     #number of major ticks
-                  ticksy=>10,     #number of major ticks
-                  borderx=>2,     #pixel border left and right
-                  bordery=>2,     #pixel border top and bottom
+  my $obj = GD::Graph::Cartesian->new(                      #default values
+                  width=>640,                               #width in pixels
+                  height=>480,                              #height in pixels
+                  ticksx=>10,                               #number of major ticks
+                  ticksy=>10,                               #number of major ticks
+                  borderx=>2,                               #pixel border left and right
+                  bordery=>2,                               #pixel border top and bottom
                   rgbfile=>"/usr/X11R6/lib/X11/rgb.txt"
-                  minx=>{auto},   #data minx
-                  miny=>{auto},   #data miny
-                  maxx=>{auto},   #data maxx
-                  maxy=>{auto},   #data maxy
+                  minx=>{auto},                             #data minx
+                  miny=>{auto},                             #data miny
+                  maxx=>{auto},                             #data maxx
+                  maxy=>{auto},                             #data maxy
                   points=>[[$x,$y,$color],...],             #addPoint method
-                  lines=>[[$x0=>$y0,$x1,$y1,$color],...]    #addLine method
+                  lines=>[[$x0=>$y0,$x1=>$y1,$color],...]   #addLine method
                   strings=>[[$x0=>$y0,'String',$color],...] #addString method
                       );
 
@@ -435,17 +437,31 @@ sub _imgy_y {
   return $self->{'height'} - ($self->{'bordery'} + $self->_scaley($y - $self->miny));
 }
 
-1;
-
-__END__
-
 =head1 TODO
+
+I'd like to add this capability into L<Chart> as a use base qw{Chart::Base}
 
 =head1 BUGS
 
-Please send to the geo-perl email list.
+Try the author
 
 =head1 LIMITS
+
+There are many packages on CPAN that create graphs and plots from data.  But, each one has it's own limitations.  This is the research that I did so that hopefully you won't have to...
+
+=head2 Similar CPAN Packages
+
+=head3 L<Chart::Plot>
+
+This is the second best package that I could find on CPAN that supports scatter plots of X/Y data.  However, it does not supports a zero based Y-axis for positive data.  Otherwise this is a great package.
+
+=head3 L<Chart>
+
+This is a great package for its support of legends, layouts and labels but it only support equally spaced x axis data.
+
+=head3 L<GD::Graph>
+
+This is a great package for pie charts but for X/Y scatter plots it only supports equally spaced x axis data.
 
 =head1 AUTHOR
 
@@ -453,13 +469,14 @@ Michael R. Davis qw/perl michaelrdavis com/
 
 =head1 LICENSE
 
-Copyright (c) 2006 Michael R. Davis (mrdvt92)
+Copyright (c) 2009 Michael R. Davis (mrdvt92)
 
 This library is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
 
 =head1 SEE ALSO
 
-L<GD>
-L<Geo::Constants>
-L<Geo::Functions>
-L<GD::Graph::Polar>
+L<GD::Graph::Cartesian>, L<GD>, L<Chart::Plot>, L<Chart>, L<GD::Graph>
+
+=cut
+
+1;

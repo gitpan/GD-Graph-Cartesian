@@ -1,4 +1,3 @@
-#!/usr/bin/perl -w
 # -*- perl -*-
 
 #
@@ -13,7 +12,6 @@ base.t - Good examples concerning how to use this module
 =cut
 
 use strict;
-use lib qw{./lib ../lib};
 
 BEGIN {
     if (!eval q{
@@ -27,7 +25,6 @@ BEGIN {
 
 BEGIN { plan tests => 9 }
 
-use lib qw{./blib/lib};
 use GD::Graph::Cartesian;
 
 my $obj = GD::Graph::Cartesian->new(width=>106,

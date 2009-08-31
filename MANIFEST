@@ -1,5 +1,3 @@
-bin/example-locate.pl
-bin/example-locate.png
 CHANGES
 lib/GD/Graph/Cartesian.pm
 LICENSE
@@ -9,3 +7,9 @@ META.yml
 README
 rgb.txt
 t/base.t
+scripts/GD-Graph-Cartesian-example.pl
+scripts/GD-Graph-Cartesian-example.png
+scripts/GD-Graph-Cartesian-locate.pl
+scripts/GD-Graph-Cartesian-locate.png
+scripts/GD-Graph-Cartesian-points.cgi
+scripts/GD-Graph-Cartesian-points.png

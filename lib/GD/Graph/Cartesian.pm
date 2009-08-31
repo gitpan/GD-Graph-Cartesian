@@ -1,4 +1,9 @@
 package GD::Graph::Cartesian;
+use strict;
+use warnings;
+use GD qw{gdSmallFont};
+
+our $VERSION = '0.05';
 
 =head1 NAME
 
@@ -18,14 +23,6 @@ GD::Graph::Cartesian - Make cartesian graph using GD package
   print $obj->draw;
 
 =head1 DESCRIPTION
-
-=cut
-
-use strict;
-use vars qw($VERSION);
-use GD qw{gdSmallFont};
-
-$VERSION = sprintf("%d.%02d", q{Revision: 0.02} =~ /(\d+)\.(\d+)/);
 
 =head1 CONSTRUCTOR
 
@@ -190,7 +187,7 @@ sub addRectangle {
 
 =head2 points 
 
-  Returns the points array reference.
+Returns the points array reference.
 
 =cut
 
@@ -200,7 +197,7 @@ sub points {
 
 =head2 lines 
 
-  Returns the lines array reference.
+Returns the lines array reference.
 
 =cut
 
@@ -210,7 +207,7 @@ sub lines {
 
 =head2 strings 
 
-  Returns the strings array reference.
+Returns the strings array reference.
 
 =cut
 
@@ -373,7 +370,7 @@ sub _minmaxy {
   push @x, map {$_->[1]} @$p;
   push @x, map {$_->[1], $_->[3]} @$l;
   push @x, map {$_->[1]} @$s;
-  @x=sort {$a <=> $b} @x;
+  @x=sort {$a <=> $b} grep {defined($_)} @x;
   return @x[0,-1];
 }
 
@@ -443,8 +440,6 @@ sub _imgy_y {
 __END__
 
 =head1 TODO
-
-The color method creates a new color for each call.  Does this really create a new color in the GD package?  Or, is it smart enough to consolidate color pallet.
 
 =head1 BUGS
 

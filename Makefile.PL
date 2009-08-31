@@ -5,7 +5,7 @@ WriteMakefile(
   PREREQ_PM => {
                  strict            => 0,
                  vars              => 0,
-                 GD                => 0,
+                 GD                => 2.02,
                 #Graphics::ColorNames => 0, #no longer required but nice to have
                },
                ($] >= 5.005 ? 

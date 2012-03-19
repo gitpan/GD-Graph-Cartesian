@@ -2,8 +2,10 @@ package GD::Graph::Cartesian;
 use strict;
 use warnings;
 use GD qw{gdSmallFont};
+use List::MoreUtils qw{minmax};
+use List::Util qw{first};
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 =head1 NAME
 
@@ -16,9 +18,9 @@ GD::Graph::Cartesian - Make cartesian graph using GD package
   $obj->addPoint(50=>25);
   $obj->addLine($x0=>$y0, $x1=>$y1);
   $obj->addRectangle($x0=>$y0, $x1=>$y1);
-  $obj->addString($x=>$y, "Hello World!");
+  $obj->addString($x=>$y, 'Hello World!');
   $obj->font(gdSmallFont);  #sets the current font from GD exports
-  $obj->color("blue");      #sets the current color from Graphics::ColorNames
+  $obj->color('blue');      #sets the current color from Graphics::ColorNames
   $obj->color([0,0,0]);     #sets the current color [red,green,blue]
   print $obj->draw;
 
@@ -39,7 +41,7 @@ The new() constructor.
                   ticksy=>10,                               #number of major ticks
                   borderx=>2,                               #pixel border left and right
                   bordery=>2,                               #pixel border top and bottom
-                  rgbfile=>"/usr/X11R6/lib/X11/rgb.txt"
+                  rgbfile=>'/usr/X11R6/lib/X11/rgb.txt'
                   minx=>{auto},                             #data minx
                   miny=>{auto},                             #data miny
                   maxx=>{auto},                             #data maxx
@@ -52,58 +54,25 @@ The new() constructor.
 =cut
 
 sub new {
-  my $this = shift();
+  my $this  = shift;
   my $class = ref($this) || $this;
-  my $self = {};
+  my $self  = {};
   bless $self, $class;
   $self->initialize(@_);
   return $self;
 }
 
-=head1 METHODS
+=head2 initialize
 
 =cut
 
 sub initialize {
-  my $self = shift();
+  my $self=shift;
   %$self=@_;
-  $self->{'points'}  = [] unless ref($self->{'points'}) eq 'ARRAY';
-  $self->{'lines'}   = [] unless ref($self->{'lines'}) eq 'ARRAY';
-  $self->{'strings'} = [] unless ref($self->{'strings'}) eq 'ARRAY';
-  $self->{'width'}   = 640 unless defined($self->{'width'});
-  $self->{'height'}  = 480 unless defined($self->{'height'});
-  $self->{'ticksx'}  =  10 unless defined($self->{'ticksx'});
-  $self->{'ticksy'}  =  10 unless defined($self->{'ticksy'});
-  $self->{'borderx'} =   2 unless defined($self->{'borderx'});
-  $self->{'bordery'} =   2 unless defined($self->{'bordery'});
-  $self->{'gdimage'}  = GD::Image->new($self->{'width'}, $self->{'height'});
-  eval 'use Graphics::ColorNames';
-  unless($@) {
-    my $rgb;
-    foreach (qw{
-                 /usr/share/X11/rgb.txt
-                 /usr/X11R6/lib/X11/rgb.txt
-                 /etc/X11/rgb.txt
-                 ./rgb.txt
-                 ../rgb.txt
-               }) {
-      $rgb=$_ if -r;
-    }
-    $self->{'rgbfile'}=$self->{'rgbfile'} || $rgb;
-    die('Error: Cannot read rgb.txt file "'. $self->{'rgbfile'}. '"') unless -r $self->{'rgbfile'};
-    $self->{'ColorNames'}=Graphics::ColorNames->new($self->{'rgbfile'});
-  }
-
-  # make the background transparent and interlaced
-  $self->{'gdimage'}->transparent($self->color([255,255,255]));
-  $self->{'gdimage'}->interlaced('true');
-  
-  # Put a frame around the picture
-  $self->{'gdimage'}->rectangle(0, 0, $self->{'width'}-1, $self->{'height'}-1, $self->color([0,0,0]));
-
-  $self->font(gdSmallFont);
-  $self->color([0,0,0]);
+  return $self;
 }
+
+=head1 METHODS
 
 =head2 addPoint
 
@@ -115,11 +84,11 @@ Method to add a point to the graph.
 =cut
 
 sub addPoint {
-  my $self = shift();
-  my $x=shift();
-  my $y=shift();
-  my $c=shift() || $self->color();
-  my $p=$self->points();
+  my $self = shift;
+  my $x    = shift;
+  my $y    = shift;
+  my $c    = shift || $self->color;
+  my $p    = $self->points;
   push @$p, [$x=>$y, $c];
   return scalar(@$p);
 }
@@ -134,13 +103,13 @@ Method to add a line to the graph.
 =cut
 
 sub addLine {
-  my $self = shift();
-  my $x0=shift();
-  my $y0=shift();
-  my $x1=shift();
-  my $y1=shift();
-  my $c=shift() || $self->color();
-  my $l=$self->lines();
+  my $self = shift;
+  my $x0   = shift;
+  my $y0   = shift;
+  my $x1   = shift;
+  my $y1   = shift;
+  my $c    = shift || $self->color;
+  my $l    = $self->lines;
   push @$l, [$x0=>$y0, $x1=>$y1, $c];
   return scalar(@$l);
 }
@@ -156,13 +125,13 @@ Method to add a string to the graph.
 =cut
 
 sub addString {
-  my $self=shift();
-  my $x=shift();
-  my $y=shift();
-  my $s=shift();
-  my $c=shift() || $self->color();
-  my $f=shift() || $self->font();
-  my $a=$self->strings();
+  my $self = shift;
+  my $x    = shift;
+  my $y    = shift;
+  my $s    = shift;
+  my $c    = shift || $self->color;
+  my $f    = shift || $self->font;
+  my $a    = $self->strings;
   push @$a, [$x=>$y, $s, $c, $f];
   return scalar(@$a);
 }
@@ -175,12 +144,12 @@ sub addString {
 =cut
 
 sub addRectangle {
-  my $self=shift();
-  my $x0=shift();
-  my $y0=shift();
-  my $x1=shift();
-  my $y1=shift();
-  my $c=shift() || $self->color();
+  my $self = shift;
+  my $x0   = shift;
+  my $y0   = shift;
+  my $x1   = shift;
+  my $y1   = shift;
+  my $c    = shift || $self->color;
   $self->addLine($x0=>$y0, $x0=>$y1, $c);
   $self->addLine($x0=>$y1, $x1=>$y1, $c);
   $self->addLine($x1=>$y1, $x1=>$y0, $c);
@@ -194,7 +163,10 @@ Returns the points array reference.
 =cut
 
 sub points {
-  return shift->{'points'};
+  my $self=shift;
+  $self->{'points'}=[]
+    unless ref($self->{'points'}) eq "ARRAY";
+  return $self->{'points'};
 }
 
 =head2 lines 
@@ -204,7 +176,10 @@ Returns the lines array reference.
 =cut
 
 sub lines {
-  return shift->{'lines'};
+  my $self=shift;
+  $self->{'lines'}=[]
+    unless ref($self->{'lines'}) eq 'ARRAY';
+  return $self->{'lines'};
 }
 
 =head2 strings 
@@ -214,33 +189,32 @@ Returns the strings array reference.
 =cut
 
 sub strings {
-  return shift->{'strings'};
+  my $self=shift;
+  $self->{'strings'}=[]
+    unless ref($self->{'strings'}) eq 'ARRAY';
+  return $self->{'strings'};
 }
 
 =head2 color
 
 Method to set or return the current drawing color
 
-  my $colorobj=$obj->color("blue");     #if Graphics::ColorNames available
+  my $colorobj=$obj->color('blue');     #if Graphics::ColorNames available
   my $colorobj=$obj->color([77,82,68]); #rgb=>[decimal,decimal,decimal]
   my $colorobj=$obj->color;
 
 =cut
 
 sub color {
-  my $self = shift();
+  my $self=shift;
   if (@_) {
-    my $color=shift();
-    if (ref($color) eq "ARRAY") {
+    my $color=shift;
+    if (ref($color) eq 'ARRAY') {
       my ($r, $g, $b)= @$color;
-      unless (defined($self->{'colors'}->{$r}->{$g}->{$b})) {
-        $self->{'colors'}->{$r}->{$g}->{$b} =
-          $self->{'gdimage'}->colorAllocate(@$color);
-      }
-      $self->{'color'}=$self->{'colors'}->{$r}->{$g}->{$b};
+      $self->{'color'}=$self->{'colors'}->{$r}->{$g}->{$b}||=$self->gdimage->colorAllocate(@$color);
     } else {
-      if (defined($self->{'ColorNames'})) {
-        my @rgb=$self->{'ColorNames'}->rgb($color);
+      if ($self->gcnames) {
+        my @rgb=$self->gcnames->rgb($color);
         @rgb=(0,0,0) unless scalar(@rgb) == 3;
         $self->{'color'}=$self->color(\@rgb);
       } else {
@@ -262,8 +236,11 @@ Method to set or return the current drawing font (only needed by the very few)
 =cut
 
 sub font {
-  my $self = shift();
-  if (@_) { $self->{'font'} = shift() } #sets value
+  my $self = shift;
+  $self->{'font'}=shift
+    if @_;
+  $self->{'font'}=gdSmallFont
+    unless defined $self->{'font'};
   return $self->{'font'};
 }
 
@@ -276,14 +253,14 @@ Method returns a PNG binary blob.
 =cut
 
 sub draw {
-  my $self=shift();
-  my $p=$self->points;
+  my $self = shift;
+  my $p    = $self->points;
   foreach (@$p) {
     my $i=$self->{'iconsize'}||7; #point size of 7 px
     my $x=$_->[0];
     my $y=$_->[1];
     my $c=ref($_->[2]) eq 'ARRAY' ? $self->color($_->[2]) : $self->color;
-    $self->{'gdimage'}->arc($self->_imgxy_xy($x,$y),$i,$i,0,360,$c);
+    $self->gdimage->arc($self->_imgxy_xy($x,$y),$i,$i,0,360,$c);
   }
   my $l=$self->lines;
   foreach (@$l) {
@@ -292,7 +269,7 @@ sub draw {
     my $x1=$_->[2];
     my $y1=$_->[3];
     my $c=ref($_->[4]) eq 'ARRAY' ? $self->color($_->[4]) : $self->color;
-    $self->{'gdimage'}->line($self->_imgxy_xy($x0, $y0),
+    $self->gdimage->line($self->_imgxy_xy($x0, $y0),
                             $self->_imgxy_xy($x1, $y1), $c);
   }
   my $s=$self->strings;
@@ -302,9 +279,135 @@ sub draw {
     my $s=$_->[2];
     my $c=ref($_->[3]) eq 'ARRAY' ? $self->color($_->[3]) : $self->color;
     my $f=$_->[4] || $self->font;
-    $self->{'gdimage'}->string($f, $self->_imgxy_xy($x, $y), $s, $c);
+    $self->gdimage->string($f, $self->_imgxy_xy($x, $y), $s, $c);
   }
-  return $self->{'gdimage'}->png;
+  return $self->gdimage->png;
+}
+
+=head1 OBJECTS
+
+=head2 gdimage
+
+Returns a L<GD> object
+
+=cut
+
+sub gdimage {
+  my $self=shift;
+  unless ($self->{'gdimage'}) {
+    $self->{'gdimage'}=GD::Image->new($self->width, $self->height);
+
+    # make the background transparent and interlaced
+    $self->{'gdimage'}->transparent($self->color([255,255,255]));
+    $self->{'gdimage'}->interlaced('true');
+  
+    # Put a frame around the picture
+    $self->{'gdimage'}->rectangle(0, 0, $self->width-1, $self->height-1, $self->color([0,0,0]));
+  }
+  return $self->{'gdimage'};
+}
+
+=head2 gcnames
+
+Returns a L<Graphics::ColorNames>
+
+=cut
+
+sub gcnames {
+  my $self=shift;
+  unless (defined $self->{'gcnames'}) {
+    eval 'use Graphics::ColorNames';
+    if ($@) {
+      die("Error: Cannot load Graphics::ColorNames");
+    } else {
+      my $file=$self->rgbfile; #stringify for object support
+      $self->{'gcnames'}=Graphics::ColorNames->new("$file");
+    }
+  }
+  return $self->{'gcnames'};
+}
+
+=head1 PROPERTIES
+
+=head2 width
+
+=cut
+
+sub width {
+  my $self=shift;
+  $self->{'width'}=640
+    unless defined $self->{'width'};
+  return $self->{'width'};
+}
+
+=head2 height
+
+=cut
+
+sub height {
+  my $self=shift;
+  $self->{'height'}=480
+    unless defined $self->{'height'};
+  return $self->{'height'};
+}
+
+=head2 ticksx
+
+=cut
+
+sub ticksx {
+  my $self=shift;
+  $self->{'ticksx'}=10
+    unless defined $self->{'ticksx'};
+  return $self->{'ticksx'};
+}
+
+=head2 ticksy
+
+=cut
+
+sub ticksy {
+  my $self=shift;
+  $self->{'ticksy'}=10
+    unless defined $self->{'ticksy'};
+  return $self->{'ticksy'};
+}
+
+=head2 borderx
+
+=cut
+
+sub borderx {
+  my $self=shift;
+  $self->{'borderx'}=2
+    unless defined $self->{'borderx'};
+  return $self->{'borderx'};
+}
+
+=head2 bordery
+
+=cut
+
+sub bordery {
+  my $self=shift;
+  $self->{'bordery'}=2
+    unless defined $self->{'bordery'};
+  return $self->{'bordery'};
+}
+
+=head2 rgbfile
+
+=cut
+
+sub rgbfile {
+  my $self=shift;
+  $self->{'rgbfile'}=shift if @_;
+  unless (defined $self->{'rgbfile'}) {
+    $self->{'rgbfile'}="rgb.txt";
+    my $rgb=first {-r} (qw{/etc/X11/rgb.txt /usr/share/X11/rgb.txt /usr/X11R6/lib/X11/rgb.txt ../rgb.txt});
+    $self->{'rgbfile'}=$rgb if $rgb;
+  }
+  return $self->{'rgbfile'};
 }
 
 =head2 minx
@@ -312,9 +415,10 @@ sub draw {
 =cut
 
 sub minx {
-  my $self=shift();
-  my ($min, $max)=$self->_minmaxx;
-  return defined($self->{'minx'}) ? $self->{'minx'} : $min;
+  my $self=shift;
+  ($self->{'minx'}, $self->{'maxx'})=$self->_minmaxx
+    unless defined $self->{'minx'};
+  return $self->{'minx'};
 }
 
 =head2 maxx
@@ -322,9 +426,10 @@ sub minx {
 =cut
 
 sub maxx {
-  my $self=shift();
-  my ($min, $max)=$self->_minmaxx;
-  return defined($self->{'maxx'}) ? $self->{'maxx'} : $max;
+  my $self=shift;
+  ($self->{'minx'}, $self->{'maxx'})=$self->_minmaxx
+    unless defined $self->{'maxx'};
+  return $self->{'maxx'};
 }
 
 =head2 miny
@@ -332,9 +437,10 @@ sub maxx {
 =cut
 
 sub miny {
-  my $self=shift();
-  my ($min, $max)=$self->_minmaxy;
-  return defined($self->{'miny'}) ? $self->{'miny'} : $min;
+  my $self=shift;
+  ($self->{'miny'}, $self->{'maxy'})=$self->_minmaxy
+    unless defined $self->{'miny'};
+  return $self->{'miny'};
 }
 
 =head2 maxy
@@ -342,38 +448,38 @@ sub miny {
 =cut
 
 sub maxy {
-  my $self=shift();
-  unless (defined($self->{'maxy'})) {
-    my ($min, $max)=$self->_minmaxy;
-    $self->{'maxy'}=$max;
-  }
+  my $self=shift;
+  ($self->{'miny'}, $self->{'maxy'})=$self->_minmaxy
+    unless defined $self->{'maxy'};
   return $self->{'maxy'};
 }
 
+=head1 INTERNAL METHODS
+
+=cut
+
 sub _minmaxx {
-  my $self=shift();
-  my $p=$self->points;
-  my $l=$self->lines;
-  my $s=$self->strings;
-  my @x=();
+  my $self = shift;
+  my $p    = $self->points;
+  my $l    = $self->lines;
+  my $s    = $self->strings;
+  my @x    = ();
   push @x, map {$_->[0]} @$p;
   push @x, map {$_->[0], $_->[2]} @$l;
   push @x, map {$_->[0]} @$s;
-  @x=sort {$a <=> $b} @x;
-  return @x[0, -1];
+  return minmax(@x);
 }
 
 sub _minmaxy {
-  my $self=shift();
-  my $p=$self->points;
-  my $l=$self->lines;
-  my $s=$self->strings;
-  my @x=();
+  my $self = shift;
+  my $p    = $self->points;
+  my $l    = $self->lines;
+  my $s    = $self->strings;
+  my @x    = ();
   push @x, map {$_->[1]} @$p;
   push @x, map {$_->[1], $_->[3]} @$l;
   push @x, map {$_->[1]} @$s;
-  @x=sort {$a <=> $b} grep {defined($_)} @x;
-  return @x[0,-1];
+  return minmax(@x);
 }
 
 =head2 _scalex
@@ -383,13 +489,13 @@ Method returns the parameter scaled to the pixels.
 =cut
 
 sub _scalex {
-  my $self=shift();
-  my $x=shift(); #units
-  my $max=$self->maxx;
-  my $min=$self->minx;
-  my $s=1;
+  my $self = shift;
+  my $x    = shift; #units
+  my $max  = $self->maxx;
+  my $min  = $self->minx;
+  my $s    = 1;
   if (defined($max) and defined($min) and $max-$min) {
-    $s=($max - $min) / ($self->{'width'} - 2 * $self->{'borderx'}); #units/pixel
+    $s=($max - $min) / ($self->width - 2 * $self->borderx); #units/pixel
   }
   return $x / $s; #pixels
 }
@@ -401,13 +507,13 @@ Method returns the parameter scaled to the pixels.
 =cut
 
 sub _scaley {
-  my $self=shift();
-  my $y=shift(); #units
-  my $max=$self->maxy;
-  my $min=$self->miny;
-  my $s=1;
+  my $self = shift;
+  my $y    = shift; #units
+  my $max  = $self->maxy;
+  my $min  = $self->miny;
+  my $s    = 1;
   if (defined($max) and defined($min) and $max-$min) {
-    $s=($max - $min) / ($self->{'height'} - 2 * $self->{'bordery'}); #units/pixel
+    $s=($max - $min) / ($self->height - 2 * $self->bordery); #units/pixel
   }
   return $y / $s; #pixels
 }
@@ -419,22 +525,22 @@ Method to convert xy to imgxy cordinates
 =cut
 
 sub _imgxy_xy {
-  my $self = shift();
-  my $x=shift();
-  my $y=shift();
+  my $self = shift;
+  my $x    = shift;
+  my $y    = shift;
   return ($self->_imgx_x($x), $self->_imgy_y($y));
 }
 
 sub _imgx_x {
-  my $self=shift();
-  my $x=shift();
-  return $self->{'borderx'} + $self->_scalex($x - $self->minx);
+  my $self = shift;
+  my $x    = shift;
+  return $self->borderx + $self->_scalex($x - $self->minx);
 }
 
 sub _imgy_y {
-  my $self=shift();
-  my $y=shift();
-  return $self->{'height'} - ($self->{'bordery'} + $self->_scaley($y - $self->miny));
+  my $self = shift;
+  my $y    = shift;
+  return $self->height - ($self->bordery + $self->_scaley($y - $self->miny));
 }
 
 =head1 TODO
@@ -443,7 +549,7 @@ I'd like to add this capability into L<Chart> as a use base qw{Chart::Base}
 
 =head1 BUGS
 
-Try the author
+Log on RT and email the author
 
 =head1 LIMITS
 

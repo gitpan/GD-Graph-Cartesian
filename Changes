@@ -1,5 +1,8 @@
 Revision history for Perl package GD-Graph-Cartesian
 
+0.08 2012-03-21
+  - Fixed package requirements for CPAN testers
+
 0.07 2012-03-19
   - Updated package with my current best practices
     - Objects are Lazy loaded

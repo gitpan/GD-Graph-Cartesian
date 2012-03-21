@@ -5,7 +5,7 @@ use GD qw{gdSmallFont};
 use List::MoreUtils qw{minmax};
 use List::Util qw{first};
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 =head1 NAME
 

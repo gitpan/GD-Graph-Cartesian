@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                GD-Graph-Cartesian
-version:             0.07
+version:             0.08
 abstract:            Make cartesian graph using GD package
 license:             ~
 author:              ~
@@ -10,6 +10,8 @@ requires:
     GD:                            2.02
     List::MoreUtils:               0
     List::Util:                    0
+    Path::Class:                   0
+    Test::Simple:                  0.44
 meta-spec:
     url:     http://module-build.sourceforge.net/META-spec-v1.3.html
     version: 1.3

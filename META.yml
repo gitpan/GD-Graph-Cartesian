@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                GD-Graph-Cartesian
-version:             0.08
+version:             0.09
 abstract:            Make cartesian graph using GD package
 license:             ~
 author:              ~

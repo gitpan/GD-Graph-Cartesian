@@ -1,5 +1,11 @@
 Revision history for Perl package GD-Graph-Cartesian
 
+0.09 2013-03-09
+  - Fixed color allocation
+    - Moved all color allocation to draw time
+    - Added color tests
+    - Added explicit orisacache initialization
+
 0.08 2012-03-21
   - Fixed package requirements for CPAN testers
 

@@ -5,7 +5,7 @@ use GD qw{gdSmallFont};
 use List::MoreUtils qw{minmax};
 use List::Util qw{first};
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 =head1 NAME
 
@@ -207,22 +207,30 @@ Method to set or return the current drawing color
 
 sub color {
   my $self=shift;
-  if (@_) {
-    my $color=shift;
-    if (ref($color) eq 'ARRAY') {
-      my ($r, $g, $b)= @$color;
-      $self->{'color'}=$self->{'colors'}->{$r}->{$g}->{$b}||=$self->gdimage->colorAllocate(@$color);
+  $self->{"color"}=shift if @_;
+  $self->{"color"}=[0,0,0] unless defined $self->{"color"};
+  return $self->{"color"};
+}
+
+sub _color_index {
+  my $self=shift;
+  my $color=shift || [0,0,0]; #default is black
+  if (ref($color) eq "ARRAY") {
+    #initialize cache
+    my ($r,$g,$b)=@$color;
+    $self->{'_color_index'}||={};
+    $self->{'_color_index'}->{$r}||={};
+    $self->{'_color_index'}->{$r}->{$g}||={};
+    return $self->{'_color_index'}->{$r}->{$g}->{$b}//=$self->gdimage->colorAllocate(@$color);
+  } else {
+    my @rgb=$self->gcnames->rgb($color);
+    if (scalar(@rgb) == 3) {
+      return $self->_color_index(\@rgb); #recursion
     } else {
-      if ($self->gcnames) {
-        my @rgb=$self->gcnames->rgb($color);
-        @rgb=(0,0,0) unless scalar(@rgb) == 3;
-        $self->{'color'}=$self->color(\@rgb);
-      } else {
-        $self->{'color'}=$self->color([0,0,0]);
-      }
+      warn(qq{Warning: Color "$color" not found.});
+      return $self->_color_index([0,0,0]); #recursion
     }
   }
-  return $self->{'color'};
 }
 
 =head2 font
@@ -236,12 +244,21 @@ Method to set or return the current drawing font (only needed by the very few)
 =cut
 
 sub font {
-  my $self = shift;
-  $self->{'font'}=shift
-    if @_;
-  $self->{'font'}=gdSmallFont
-    unless defined $self->{'font'};
+  my $self=shift;
+  $self->{'font'}=shift if @_;
+  $self->{'font'}=gdSmallFont unless defined $self->{'font'};
   return $self->{'font'};
+}
+
+=head2 iconsize
+
+=cut
+
+sub iconsize {
+  my $self=shift;
+  $self->{"iconsize"}=shift if @_;
+  $self->{"iconsize"}=7 unless $self->{"iconsize"};
+  return $self->{"iconsize"};
 }
 
 =head2 draw
@@ -256,10 +273,10 @@ sub draw {
   my $self = shift;
   my $p    = $self->points;
   foreach (@$p) {
-    my $i=$self->{'iconsize'}||7; #point size of 7 px
+    my $i=$self->iconsize;
     my $x=$_->[0];
     my $y=$_->[1];
-    my $c=ref($_->[2]) eq 'ARRAY' ? $self->color($_->[2]) : $self->color;
+    my $c=$self->_color_index($_->[2]);
     $self->gdimage->arc($self->_imgxy_xy($x,$y),$i,$i,0,360,$c);
   }
   my $l=$self->lines;
@@ -268,7 +285,7 @@ sub draw {
     my $y0=$_->[1];
     my $x1=$_->[2];
     my $y1=$_->[3];
-    my $c=ref($_->[4]) eq 'ARRAY' ? $self->color($_->[4]) : $self->color;
+    my $c=$self->_color_index($_->[4]);
     $self->gdimage->line($self->_imgxy_xy($x0, $y0),
                             $self->_imgxy_xy($x1, $y1), $c);
   }
@@ -277,7 +294,7 @@ sub draw {
     my $x=$_->[0];
     my $y=$_->[1];
     my $s=$_->[2];
-    my $c=ref($_->[3]) eq 'ARRAY' ? $self->color($_->[3]) : $self->color;
+    my $c=$self->_color_index($_->[3]);
     my $f=$_->[4] || $self->font;
     $self->gdimage->string($f, $self->_imgxy_xy($x, $y), $s, $c);
   }
@@ -298,11 +315,12 @@ sub gdimage {
     $self->{'gdimage'}=GD::Image->new($self->width, $self->height);
 
     # make the background transparent and interlaced
-    $self->{'gdimage'}->transparent($self->color([255,255,255]));
-    $self->{'gdimage'}->interlaced('true');
+    #$self->{'gdimage'}->transparent($self->_color_index([255,255,255]));
+    $self->{'gdimage'}->filledRectangle(0, 0, $self->width, $self->height, $self->_color_index([255,255,255]));
+    #$self->{'gdimage'}->interlaced('true');
   
     # Put a frame around the picture
-    $self->{'gdimage'}->rectangle(0, 0, $self->width-1, $self->height-1, $self->color([0,0,0]));
+    $self->{'gdimage'}->rectangle(0, 0, $self->width-1, $self->height-1, $self->_color_index([0,0,0]));
   }
   return $self->{'gdimage'};
 }
@@ -321,7 +339,7 @@ sub gcnames {
       die("Error: Cannot load Graphics::ColorNames");
     } else {
       my $file=$self->rgbfile; #stringify for object support
-      $self->{'gcnames'}=Graphics::ColorNames->new("$file");
+      $self->{'gcnames'}=Graphics::ColorNames->new("$file") or die("Error: Graphics::ColorNames constructor failed.");
     }
   }
   return $self->{'gcnames'};

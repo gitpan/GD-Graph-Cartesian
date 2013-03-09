@@ -1,7 +1,7 @@
 # -*- perl -*-
 use strict;
 use warnings;
-use Test::More tests => 12;
+use Test::More tests => 14;
 use Path::Class qw{file};
 
 BEGIN { use_ok( 'GD::Graph::Cartesian' ); }
@@ -24,6 +24,8 @@ foreach my $x (-33, 22, 11, -50, 50) {
     $obj->addPoint($x,$y);
   }
 }
+is($obj->width => 106);
+is($obj->height => 108);
 is($obj->_scaley(15), 15, "_scaley");
 is($obj->_scalex(15), 15, "_scalex");
 my($x,$y)=$obj->_imgxy_xy(5,7);

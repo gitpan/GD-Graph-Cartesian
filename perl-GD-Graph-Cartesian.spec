@@ -1,5 +1,5 @@
 Name:           perl-GD-Graph-Cartesian
-Version:        0.08
+Version:        0.09
 Release:        1%{?dist}
 Summary:        Make cartesian graph using GD package
 License:        perl

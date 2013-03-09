@@ -11,8 +11,9 @@ L<http://search.cpan.org/src/MRDVT/GD-Graph-Cartesian-0.05/scripts/GD-Graph-Cart
 =cut
 
 use strict;
-use lib qw{./lib ../lib};
+use warnings;
 use GD::Graph::Cartesian;
+use Path::Class qw{file dir};
 
 my $obj=GD::Graph::Cartesian->new(width=>800, height=>400,
                                   borderx=>15, bordery=>25,
@@ -31,6 +32,6 @@ foreach my $x ($sx.. $ex) {
 }
 my ($x0,$x1,$y0,$y1) = ($obj->_minmaxx, $obj->_minmaxy);
 $obj->addRectangle($x0,$y0,$x1,$y1);
-open(IMG, ">GD-Graph-Cartesian-locate.png");
-print IMG $obj->draw;
-close(IMG);
+my $file=file(file($0)->dir => "GD-Graph-Cartesian-locate.png");
+my $fh=$file->openw;
+print $fh $obj->draw;

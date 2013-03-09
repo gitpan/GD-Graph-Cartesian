@@ -14,10 +14,11 @@ use GD::Graph::Cartesian;
 my $cgi=CGI->new;
 
 my $obj=GD::Graph::Cartesian->new(
-                                  height=>400,
-                                  width=>800,
-                                  borderx=>10,
-                                  bordery=>10,
+                                  height   => 400,
+                                  width    => 800,
+                                  borderx  => 10,
+                                  bordery  => 10,
+                                  iconsize => 2,
                                  );
 $obj->color("blue");      #sets the current color from Graphics::ColorNames
 foreach my $x (0 .. 500) {

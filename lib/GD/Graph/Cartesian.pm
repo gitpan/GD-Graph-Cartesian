@@ -1,15 +1,16 @@
 package GD::Graph::Cartesian;
 use strict;
 use warnings;
+use base qw{Package::New};
 use GD qw{gdSmallFont};
 use List::MoreUtils qw{minmax};
 use List::Util qw{first};
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 =head1 NAME
 
-GD::Graph::Cartesian - Make cartesian graph using GD package
+GD::Graph::Cartesian - Make Cartesian Graphs with GD Package
 
 =head1 SYNOPSIS
 
@@ -26,7 +27,7 @@ GD::Graph::Cartesian - Make cartesian graph using GD package
 
 =head1 DESCRIPTION
 
-This is a wrapper around L<GD> to place points and lines on a X/Y scater plot.  
+This is a wrapper around L<GD> to place points and lines on a X/Y scatter plot.  
 
 =head1 CONSTRUCTOR
 
@@ -51,27 +52,6 @@ The new() constructor.
                   strings=>[[$x0=>$y0,'String',$color],...] #addString method
                       );
 
-=cut
-
-sub new {
-  my $this  = shift;
-  my $class = ref($this) || $this;
-  my $self  = {};
-  bless $self, $class;
-  $self->initialize(@_);
-  return $self;
-}
-
-=head2 initialize
-
-=cut
-
-sub initialize {
-  my $self=shift;
-  %$self=@_;
-  return $self;
-}
-
 =head1 METHODS
 
 =head2 addPoint
@@ -80,6 +60,8 @@ Method to add a point to the graph.
 
   $obj->addPoint(50=>25);
   $obj->addPoint(50=>25, [$r,$g,$b]);
+  $obj->addPoint(50=>25, [$r,$g,$b], $size);        #size default iconsize 7
+  $obj->addPoint(50=>25, [$r,$g,$b], $size, $fill); #fill 0|1
 
 =cut
 
@@ -88,8 +70,10 @@ sub addPoint {
   my $x    = shift;
   my $y    = shift;
   my $c    = shift || $self->color;
+  my $s    = shift || $self->iconsize;
+  my $f    = shift || 0;
   my $p    = $self->points;
-  push @$p, [$x=>$y, $c];
+  push @$p, [$x=>$y, $c, $s, $f];
   return scalar(@$p);
 }
 
@@ -221,7 +205,7 @@ sub _color_index {
     $self->{'_color_index'}||={};
     $self->{'_color_index'}->{$r}||={};
     $self->{'_color_index'}->{$r}->{$g}||={};
-    return $self->{'_color_index'}->{$r}->{$g}->{$b}//=$self->gdimage->colorAllocate(@$color);
+    return $self->{'_color_index'}->{$r}->{$g}->{$b}||=$self->gdimage->colorAllocate(@$color);
   } else {
     my @rgb=$self->gcnames->rgb($color);
     if (scalar(@rgb) == 3) {
@@ -273,30 +257,34 @@ sub draw {
   my $self = shift;
   my $p    = $self->points;
   foreach (@$p) {
-    my $i=$self->iconsize;
-    my $x=$_->[0];
-    my $y=$_->[1];
-    my $c=$self->_color_index($_->[2]);
-    $self->gdimage->arc($self->_imgxy_xy($x,$y),$i,$i,0,360,$c);
+    my $x      = $_->[0];
+    my $y      = $_->[1];
+    my $c      = $_->[2] || $self->color;
+    my $i      = $_->[3] || $self->iconsize;
+    my $filled = $_->[4] || 0;
+    if ($filled) {
+      $self->gdimage->filledArc($self->_imgxy_xy($x,$y),$i,$i,0,360,$self->_color_index($c));
+    } else {
+      $self->gdimage->arc($self->_imgxy_xy($x,$y),$i,$i,0,360,$self->_color_index($c));
+    }
   }
   my $l=$self->lines;
   foreach (@$l) {
-    my $x0=$_->[0];
-    my $y0=$_->[1];
-    my $x1=$_->[2];
-    my $y1=$_->[3];
-    my $c=$self->_color_index($_->[4]);
-    $self->gdimage->line($self->_imgxy_xy($x0, $y0),
-                            $self->_imgxy_xy($x1, $y1), $c);
+    my $x0 = $_->[0];
+    my $y0 = $_->[1];
+    my $x1 = $_->[2];
+    my $y1 = $_->[3];
+    my $c  = $_->[4] || $self->color;
+    $self->gdimage->line($self->_imgxy_xy($x0, $y0), $self->_imgxy_xy($x1, $y1), $self->_color_index($c));
   }
   my $s=$self->strings;
   foreach (@$s) {
-    my $x=$_->[0];
-    my $y=$_->[1];
-    my $s=$_->[2];
-    my $c=$self->_color_index($_->[3]);
-    my $f=$_->[4] || $self->font;
-    $self->gdimage->string($f, $self->_imgxy_xy($x, $y), $s, $c);
+    my $x = $_->[0];
+    my $y = $_->[1];
+    my $s = $_->[2];
+    my $c = $_->[3] || $self->color;
+    my $f = $_->[4] || $self->font;
+    $self->gdimage->string($f, $self->_imgxy_xy($x, $y), $s, $self->_color_index($c));
   }
   return $self->gdimage->png;
 }
@@ -538,7 +526,7 @@ sub _scaley {
 
 =head2 _imgxy_xy
 
-Method to convert xy to imgxy cordinates
+Method to convert xy to imgxy coordinates
 
 =cut
 

@@ -1,7 +1,7 @@
 --- #YAML:1.0
 name:                GD-Graph-Cartesian
-version:             0.09
-abstract:            Make cartesian graph using GD package
+version:             0.10
+abstract:            Make Cartesian Graphs with GD Package
 license:             ~
 author:              ~
 generated_by:        ExtUtils::MakeMaker version 6.42
@@ -10,6 +10,7 @@ requires:
     GD:                            2.02
     List::MoreUtils:               0
     List::Util:                    0
+    Package::New:                  0
     Path::Class:                   0
     Test::Simple:                  0.44
 meta-spec:

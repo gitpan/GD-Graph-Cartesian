@@ -9,5 +9,6 @@ WriteMakefile(
                      'GD'                => 2.02,
                      'List::Util'        => 0,
                      'List::MoreUtils'   => 0,
+                     'Package::New'      => 0,
                    },
              );

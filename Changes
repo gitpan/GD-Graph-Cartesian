@@ -1,5 +1,10 @@
 Revision history for Perl package GD-Graph-Cartesian
 
+0.10 2014-05-16
+  - Added icon size and fill capabilites to individual points
+  - Removed single use of // for perl 5.8 compatability
+  - use base Package::New
+
 0.09 2013-03-09
   - Fixed color allocation
     - Moved all color allocation to draw time

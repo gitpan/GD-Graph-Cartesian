@@ -24,18 +24,23 @@ is($obj->color("white"), "white");
 is_deeply($obj->color([255,255,255]), [255,255,255]);
 
 #these are pre-alocated on construction
-is($obj->_color_index("black"), 2, '$obj->_color_index black');
-is($obj->_color_index("white"), 0, '$obj->_color_index white');
+my $white_index=$obj->_color_index([255,255,255]);
+my $black_index=$obj->_color_index([0,0,0]);
+my $red_index=$obj->_color_index([255,0,0]);
+my $blue_index=$obj->_color_index([0,0,255]);
+
+is($obj->_color_index("black"), $black_index, '$obj->_color_index black');
+is($obj->_color_index("white"), $white_index, '$obj->_color_index white');
 
 #these are new
-is($obj->_color_index("blue"), 3, '$obj->_color_index blue');
-is($obj->_color_index("red"), 4, '$obj->_color_index red');
+is($obj->_color_index("blue"), $blue_index, '$obj->_color_index blue');
+is($obj->_color_index("red"), $red_index, '$obj->_color_index red');
 
 #these are cached
-is($obj->_color_index([0,0,0]), 2, '$obj->_color_index black');
-is($obj->_color_index([255,255,255]), 0, '$obj->_color_index white');
-is($obj->_color_index([0,0,255]), 3, '$obj->_color_index blue');
-is($obj->_color_index([255,0,0]), 4, '$obj->_color_index red');
+is($obj->_color_index([0,0,0]), $black_index, '$obj->_color_index black');
+is($obj->_color_index([255,255,255]), $white_index, '$obj->_color_index white');
+is($obj->_color_index([0,0,255]), $blue_index, '$obj->_color_index blue');
+is($obj->_color_index([255,0,0]), $red_index, '$obj->_color_index red');
 
 #use Data::Dumper qw{Dumper};
 #diag Dumper $obj;

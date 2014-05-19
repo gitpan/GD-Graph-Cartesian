@@ -8,6 +8,7 @@ README
 t/rgb.txt
 t/001_load.t
 t/002_color.t
+t/003_label.t
 scripts/GD-Graph-Cartesian-example.pl
 scripts/GD-Graph-Cartesian-example.png
 scripts/GD-Graph-Cartesian-locate.pl

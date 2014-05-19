@@ -6,7 +6,7 @@ use GD qw{gdSmallFont};
 use List::MoreUtils qw{minmax};
 use List::Util qw{first};
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 =head1 NAME
 
@@ -20,6 +20,7 @@ GD::Graph::Cartesian - Make Cartesian Graphs with GD Package
   $obj->addLine($x0=>$y0, $x1=>$y1);
   $obj->addRectangle($x0=>$y0, $x1=>$y1);
   $obj->addString($x=>$y, 'Hello World!');
+  $obj->addLabel($pxx=>$pxy, 'Title'); #for labels on image not on chart 
   $obj->font(gdSmallFont);  #sets the current font from GD exports
   $obj->color('blue');      #sets the current color from Graphics::ColorNames
   $obj->color([0,0,0]);     #sets the current color [red,green,blue]
@@ -120,6 +121,28 @@ sub addString {
   return scalar(@$a);
 }
 
+=head2 addLabel
+
+Method to add a label to the image (not the graph).
+
+  $obj->addLabel(50=>25, 'Label'); #x/y pixels of the image NOT units of the chart
+  $obj->addLabel(50=>25, 'Label', [$r,$g,$b]);
+  $obj->addLabel(50=>25, 'Label', [$r,$g,$b], $font); #$font is a gdfont
+
+=cut
+
+sub addLabel {
+  my $self = shift;
+  my $x    = shift;
+  my $y    = shift;
+  my $s    = shift;
+  my $c    = shift || $self->color;
+  my $f    = shift || $self->font;
+  my $a    = $self->labels;
+  push @$a, [$x=>$y, $s, $c, $f];
+  return scalar(@$a);
+}
+
 =head2 addRectangle
 
   $obj->addRectangle(50=>25, 75=>35);
@@ -178,6 +201,20 @@ sub strings {
     unless ref($self->{'strings'}) eq 'ARRAY';
   return $self->{'strings'};
 }
+
+=head2 labels
+
+Returns the labels array reference.
+
+=cut
+
+sub labels {
+  my $self=shift;
+  $self->{'labels'}=[]
+    unless ref($self->{'labels'}) eq 'ARRAY';
+  return $self->{'labels'};
+}
+
 
 =head2 color
 
@@ -285,6 +322,15 @@ sub draw {
     my $c = $_->[3] || $self->color;
     my $f = $_->[4] || $self->font;
     $self->gdimage->string($f, $self->_imgxy_xy($x, $y), $s, $self->_color_index($c));
+  }
+  my $label=$self->labels;
+  foreach (@$label) {
+    my $x = $_->[0];
+    my $y = $_->[1];
+    my $s = $_->[2];
+    my $c = $_->[3] || $self->color;
+    my $f = $_->[4] || $self->font;
+    $self->gdimage->string($f, $x, $y, $s, $self->_color_index($c));
   }
   return $self->gdimage->png;
 }

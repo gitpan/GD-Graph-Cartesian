@@ -1,5 +1,8 @@
 Revision history for Perl package GD-Graph-Cartesian
 
+0.11 2014-05-19
+  - Added addLabel method
+
 0.10 2014-05-16
   - Added icon size and fill capabilites to individual points
   - Removed single use of // for perl 5.8 compatability
